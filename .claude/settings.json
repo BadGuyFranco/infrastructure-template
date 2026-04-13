@@ -1,0 +1,72 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(*)",
+      "Read(*)",
+      "Write(*)",
+      "Edit(*)",
+      "Glob(*)",
+      "Grep(*)",
+      "Agent(*)",
+      "WebFetch(*)",
+      "WebSearch(*)"
+    ]
+  },
+  "env": {
+    "CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD": "1",
+    "CLAUDE_CODE_DISABLE_1M_CONTEXT": "1",
+    "CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING": "1",
+    "CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1",
+    "CLAUDE_CODE_SUBAGENT_MODEL": "sonnet"
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'Skills available: Oscar: /session-start, /session-end, /phase-transition, /priority-complete, /session-abort. Run the appropriate session-start skill if you are an orchestrator.'"
+          },
+          {
+            "type": "command",
+            "command": "afplay /System/Library/Sounds/Glass.aiff 2>/dev/null &"
+          }
+        ]
+      },
+      {
+        "matcher": "resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "afplay /System/Library/Sounds/Bottle.aiff 2>/dev/null &"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/code-hygiene-check.sh",
+            "async": true,
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "afplay /System/Library/Sounds/Submarine.aiff 2>/dev/null &"
+          }
+        ]
+      }
+    ]
+  }
+}

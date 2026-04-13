@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Claude Code -- ignore everything except version-controlled config
+.claude/*
+!.claude/agents/
+!.claude/hooks/
+!.claude/settings.json
+# Uncomment as needed:
+# !.claude/skills/
+# !.claude/rules/
+
+# Local settings (machine-specific permissions)
+.claude/settings.local.json
+
+# Environment files
+.env
+.env.*
+
+# Build output
+dist/
+build-output/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Archives
+build/build-personas/zArchive/
