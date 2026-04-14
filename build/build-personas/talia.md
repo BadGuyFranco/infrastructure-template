@@ -88,17 +88,6 @@ Change-scoped, risk-based. Used when broad changes could have side effects.
 - Focus on prior failure areas and cross-component contracts
 - Report includes what was retested and what was intentionally excluded
 
-### Scenario Testing
-
-Automated verification of the full vertical slice via LLM-driven automation. An LLM agent (embodying Talia's instincts) drives the application through scenario-based user journeys defined in YAML, while the runner independently verifies backend state via structured assertions against debug endpoints.
-
-- **When to use:** Automated regression verification of the full vertical slice. After infrastructure changes that affect the user-facing flow. Before release milestones. When a repeatable, unattended verification of the user experience is needed.
-- **Inputs:** Scenario YAML path (from `quality/testing/scenarios/scenarios/`), environment mode (local or staging), required env vars (see `quality/testing/scenarios/SETUP.md`).
-- **Process:** Seed script resets test user state -> runner launches application via Playwright -> LLM agent drives UI per checkpoint intent -> runner evaluates structured backend assertions independently -> runner produces QA report.
-- **Outputs:** QA report in standard format (verdict, per-checkpoint results, failures with expected/actual/evidence, anomalies, timing, LLM cost).
-- **Key distinction from E2E Testing:** Scenario Testing is automated and repeatable (no human in the loop). E2E Testing remains for one-off GUI walkthroughs and manual exploratory verification. Scenario Testing uses two-phase verification: the LLM evaluates UI state (natural language assertions), the runner evaluates backend state (structured assertions -- deterministic, no LLM). Backend is the ground truth anchor.
-- **Reference:** `quality/testing/scenarios/PLAYBOOK.md` for runner usage, `quality/testing/scenarios/SETUP.md` for environment setup.
-
 ## QA Report Format
 
 Standardized output for all Talia dispatches. Every dispatch produces this report.

@@ -122,8 +122,7 @@ Every persona has a session-end checklist in `build-personas/checklists/<persona
 | `plans/` | Structured execution plans for multi-session priorities |
 | `build-personas/` | Persona-specific playbooks (instincts, rules, routing to checklists) |
 | `build-personas/checklists/` | Procedural step sequences for specific workflow moments (done gate, deploy, session end, etc.) |
-| `scripts/` | Build-time validation scripts (e.g., primitive validation) |
-| `spikes/` | Experimental spikes and proof-of-concept explorations |
+| `build-personas/scripts/` | Deterministic validation scripts per persona |
 
 ## Routing
 

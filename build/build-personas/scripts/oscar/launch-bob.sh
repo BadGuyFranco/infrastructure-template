@@ -43,7 +43,7 @@ BOB_SESSION_ID=$(uuidgen | tr '[:upper:]' '[:lower:]')
 # Create tmux session running Claude Code with full workspace
 # Customize --add-dir flags to include your project's workspace directories
 $TMUX_BIN -L "$SOCKET_NAME" new-session -d -s "$SESSION_NAME" -x 200 -y 50 \
-  "cd '$PROJECT_ROOT' && claude --session-id '$BOB_SESSION_ID' --dangerously-skip-permissions --effort high; echo 'Bob exited. Press any key.'; read"
+  "cd '$PROJECT_ROOT' && claude --session-id '$BOB_SESSION_ID' --agent bob --dangerously-skip-permissions --effort high; echo 'Bob exited. Press any key.'; read"
 
 # Wait for Claude Code TUI to render the input prompt
 echo "  Waiting for Bob's TUI to initialize..." >&2

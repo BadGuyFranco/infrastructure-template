@@ -38,10 +38,13 @@ const CHECK_NAME = 'code-hygiene'
 const WARN_LINES = 200
 const FAIL_LINES = 300
 
-/** Directories to scan (relative to ROOT). Customize for your project. */
+/**
+ * Directories to scan (relative to ROOT).
+ * CUSTOMIZE: Replace with your workspace package directories.
+ * Example: ['packages', 'apps'] or ['src'] or ['my-services', 'my-web']
+ */
 const SCAN_DIRS = [
-  'packages',
-  'apps',
+  'src',
 ]
 
 /** Directories to skip */

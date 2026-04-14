@@ -14,22 +14,45 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
+# ── Escape sed special characters ───────────────────────────
+# Prevents user input containing &, |, \, /, etc. from
+# corrupting sed replacement strings.
+escape_sed() {
+  printf '%s' "$1" | sed -e 's/[&/\|]/\\&/g'
+}
+
 # ── Check mode ──────────────────────────────────────────────
 
 if [ "${1:-}" = "--check" ]; then
   echo ""
   echo "  Remaining placeholders:"
   echo ""
-  grep -rn '{PROJECT_NAME}\|{PROJECT_ROOT}\|{MONOREPO_ROOT}\|{GITHUB_ACCOUNT}\|{GCP_PROJECT_ID}\|{GCP_REGION}\|{DATE}\|{project-name}\|{YOUR DEV SERVER START COMMAND}' \
-    --include="*.md" --include="*.json" --include="*.sh" --include="*.command" \
-    "$SCRIPT_DIR" 2>/dev/null | grep -v 'node_modules' | grep -v '.git/' || echo "  None found -- template is fully hydrated."
+
+  # Phase 1: placeholders that setup.sh replaces
+  echo "  -- Replaced by setup.sh (should be zero after running) --"
+  grep -rn '{PROJECT_NAME}\|{project-name}\|{PROJECT_ROOT}\|{MONOREPO_ROOT}\|{GITHUB_ACCOUNT}\|{GCP_PROJECT_ID}\|{GCP_REGION}\|{FOUNDER_NAME}\|{your-name}' \
+    --include="*.md" --include="*.json" --include="*.sh" --include="*.command" --include="*.ts" \
+    "$SCRIPT_DIR" 2>/dev/null | grep -v 'node_modules' | grep -v '.git/' | grep -v 'setup.sh' || echo "  None -- setup.sh replacements are clean."
+  echo ""
+
+  # Phase 2: deferred placeholders (need project-specific config)
+  echo "  -- Deferred (fill in when you set up these systems) --"
+  grep -rn '{API_STAGING_URL}\|{SYSTEM_USER_UUID}\|{ORG_NAME}\|{ORG_SLUG}\|{ORG_UUID}\|{STAGING_DOMAIN}\|{PRODUCTION_DOMAIN}\|{NEON_CONNECTION_STRING}' \
+    --include="*.md" --include="*.json" --include="*.sh" --include="*.command" --include="*.ts" \
+    "$SCRIPT_DIR" 2>/dev/null | grep -v 'node_modules' | grep -v '.git/' || echo "  None."
+  echo ""
+
+  # Phase 3: manual-fill placeholders (require human input)
+  echo "  -- Manual fill (replace with your project's commands/values) --"
+  grep -rn '{YOUR[^}]*}\|{DATE}\|{ONE_SENTENCE_DESCRIPTION}\|{BRIEF_SUMMARY' \
+    --include="*.md" --include="*.json" --include="*.sh" --include="*.command" --include="*.ts" \
+    "$SCRIPT_DIR" 2>/dev/null | grep -v 'node_modules' | grep -v '.git/' | grep -v 'setup.sh' || echo "  None."
   echo ""
   exit 0
 fi
 
 echo ""
 echo "  Infrastructure Template Setup"
-echo "  ────────────────────────────────"
 echo ""
 echo "  This will replace all {PLACEHOLDER} values in the template"
 echo "  with your project-specific configuration."
@@ -54,13 +77,16 @@ if [ -z "$PROJECT_ROOT" ]; then
   exit 1
 fi
 
+read -rp "  Your name (e.g. 'Jane'): " FOUNDER_NAME
+FOUNDER_NAME="${FOUNDER_NAME:-Founder}"
+
 read -rp "  GitHub account (e.g. 'myorg' or 'myusername'): " GITHUB_ACCOUNT
 GITHUB_ACCOUNT="${GITHUB_ACCOUNT:-your-github-account}"
 
-read -rp "  Cloud provider project ID (e.g. 'my-project-123', or press Enter to skip): " GCP_PROJECT_ID
+read -rp "  Cloud provider project ID (e.g. 'my-project-123', or Enter to skip): " GCP_PROJECT_ID
 GCP_PROJECT_ID="${GCP_PROJECT_ID:-your-project-id}"
 
-read -rp "  Cloud provider region (e.g. 'us-central1', or press Enter to skip): " GCP_REGION
+read -rp "  Cloud provider region (e.g. 'us-central1', or Enter to skip): " GCP_REGION
 GCP_REGION="${GCP_REGION:-us-central1}"
 
 TODAY=$(date +%Y-%m-%d)
@@ -70,6 +96,7 @@ echo "  Configuration:"
 echo "    Project name:    $PROJECT_NAME"
 echo "    Package slug:    $PROJECT_SLUG"
 echo "    Project root:    $PROJECT_ROOT"
+echo "    Founder name:    $FOUNDER_NAME"
 echo "    GitHub account:  $GITHUB_ACCOUNT"
 echo "    Cloud project:   $GCP_PROJECT_ID"
 echo "    Cloud region:    $GCP_REGION"
@@ -85,38 +112,50 @@ fi
 echo ""
 echo "  Applying replacements..."
 
+# ── Escape inputs for safe sed usage ────────────────────────
+
+E_PROJECT_NAME=$(escape_sed "$PROJECT_NAME")
+E_PROJECT_SLUG=$(escape_sed "$PROJECT_SLUG")
+E_PROJECT_ROOT=$(escape_sed "$PROJECT_ROOT")
+E_FOUNDER_NAME=$(escape_sed "$FOUNDER_NAME")
+E_GITHUB_ACCOUNT=$(escape_sed "$GITHUB_ACCOUNT")
+E_GCP_PROJECT_ID=$(escape_sed "$GCP_PROJECT_ID")
+E_GCP_REGION=$(escape_sed "$GCP_REGION")
+
 # ── Replace placeholders ────────────────────────────────────
 
-# Find all text files in the repo (excluding .git, node_modules)
 find "$SCRIPT_DIR" \
   -type f \
   \( -name "*.md" -o -name "*.json" -o -name "*.sh" -o -name "*.command" -o -name "*.ts" \) \
   -not -path "*/.git/*" \
   -not -path "*/node_modules/*" \
-  -not -path "*/setup.sh" \
+  -not -name "setup.sh" \
   -print0 | while IFS= read -r -d '' file; do
 
-  # Apply replacements (macOS sed requires '' after -i)
   if [[ "$OSTYPE" == "darwin"* ]]; then
     sed -i '' \
-      -e "s|{PROJECT_NAME}|${PROJECT_NAME}|g" \
-      -e "s|{project-name}|${PROJECT_SLUG}|g" \
-      -e "s|{PROJECT_ROOT}|${PROJECT_ROOT}|g" \
-      -e "s|{MONOREPO_ROOT}|${PROJECT_ROOT}|g" \
-      -e "s|{GITHUB_ACCOUNT}|${GITHUB_ACCOUNT}|g" \
-      -e "s|{GCP_PROJECT_ID}|${GCP_PROJECT_ID}|g" \
-      -e "s|{GCP_REGION}|${GCP_REGION}|g" \
+      -e "s|{PROJECT_NAME}|${E_PROJECT_NAME}|g" \
+      -e "s|{project-name}|${E_PROJECT_SLUG}|g" \
+      -e "s|{PROJECT_ROOT}|${E_PROJECT_ROOT}|g" \
+      -e "s|{MONOREPO_ROOT}|${E_PROJECT_ROOT}|g" \
+      -e "s|{FOUNDER_NAME}|${E_FOUNDER_NAME}|g" \
+      -e "s|{your-name}|${E_FOUNDER_NAME}|g" \
+      -e "s|{GITHUB_ACCOUNT}|${E_GITHUB_ACCOUNT}|g" \
+      -e "s|{GCP_PROJECT_ID}|${E_GCP_PROJECT_ID}|g" \
+      -e "s|{GCP_REGION}|${E_GCP_REGION}|g" \
       -e "s|{DATE}|${TODAY}|g" \
       "$file"
   else
     sed -i \
-      -e "s|{PROJECT_NAME}|${PROJECT_NAME}|g" \
-      -e "s|{project-name}|${PROJECT_SLUG}|g" \
-      -e "s|{PROJECT_ROOT}|${PROJECT_ROOT}|g" \
-      -e "s|{MONOREPO_ROOT}|${PROJECT_ROOT}|g" \
-      -e "s|{GITHUB_ACCOUNT}|${GITHUB_ACCOUNT}|g" \
-      -e "s|{GCP_PROJECT_ID}|${GCP_PROJECT_ID}|g" \
-      -e "s|{GCP_REGION}|${GCP_REGION}|g" \
+      -e "s|{PROJECT_NAME}|${E_PROJECT_NAME}|g" \
+      -e "s|{project-name}|${E_PROJECT_SLUG}|g" \
+      -e "s|{PROJECT_ROOT}|${E_PROJECT_ROOT}|g" \
+      -e "s|{MONOREPO_ROOT}|${E_PROJECT_ROOT}|g" \
+      -e "s|{FOUNDER_NAME}|${E_FOUNDER_NAME}|g" \
+      -e "s|{your-name}|${E_FOUNDER_NAME}|g" \
+      -e "s|{GITHUB_ACCOUNT}|${E_GITHUB_ACCOUNT}|g" \
+      -e "s|{GCP_PROJECT_ID}|${E_GCP_PROJECT_ID}|g" \
+      -e "s|{GCP_REGION}|${E_GCP_REGION}|g" \
       -e "s|{DATE}|${TODAY}|g" \
       "$file"
   fi
@@ -125,16 +164,32 @@ done
 echo "  Done."
 echo ""
 
-# ── Post-setup checklist ────────────────────────────────────
+# ── Post-setup report ───────────────────────────────────────
 
+echo "  Replaced: {PROJECT_NAME}, {project-name}, {PROJECT_ROOT},"
+echo "            {MONOREPO_ROOT}, {FOUNDER_NAME}, {your-name},"
+echo "            {GITHUB_ACCOUNT}, {GCP_PROJECT_ID}, {GCP_REGION}, {DATE}"
+echo ""
+echo "  Deferred placeholders (fill in when you set up these systems):"
+echo "    {API_STAGING_URL}       -- Your staging API URL (ticketing, deploys)"
+echo "    {SYSTEM_USER_UUID}      -- Your system user UUID (ticketing)"
+echo "    {ORG_NAME/SLUG/UUID}    -- Your organization (ticketing)"
+echo "    {STAGING_DOMAIN}        -- Your staging domain (deploys)"
+echo "    {PRODUCTION_DOMAIN}     -- Your production domain (deploys)"
+echo "    {NEON_CONNECTION_STRING} -- Your database connection (if using Neon)"
+echo ""
+echo "  Manual-fill placeholders (replace with your project's values):"
+echo "    {YOUR COMMANDS}         -- Dev commands in standards docs"
+echo "    {YOUR DEV SERVER START COMMAND}"
+echo "    {YOUR_TYPECHECK_COMMAND}"
+echo "    {YOUR_TEST_COMMAND}"
+echo ""
+echo "  Run './setup.sh --check' to see what remains."
+echo ""
 echo "  Next steps:"
-echo ""
-echo "  1. Review the changes:  git diff"
-echo "  2. Add your dev commands to build/AGENTS.md"
-echo "  3. Add workspace packages to AGENTS.md"
-echo "  4. Create your first priority in build/PRIORITIES.md"
-echo "  5. Set up Claude Code:  claude auth"
-echo "  6. Test a session:      claude --agent bob"
-echo ""
-echo "  Run './setup.sh --check' to verify no placeholders remain."
+echo "    1. git diff                           -- review changes"
+echo "    2. Add dev commands to build/AGENTS.md"
+echo "    3. Add workspace packages to AGENTS.md"
+echo "    4. Create first priority in build/PRIORITIES.md"
+echo "    5. claude --agent bob                 -- start building"
 echo ""

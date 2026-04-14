@@ -92,16 +92,17 @@ After applying changes, confirm:
 
 ## Source Locations
 
-CoBuilder upstream files are found at these paths (relative to the workspace root):
+Upstream source paths depend on your source project's structure. Map each template area to its corresponding directory in the source project:
 
-| Template Area | CoBuilder Source Path |
-|--------------|---------------------|
-| Persona playbooks | `CoBuilder/infrastructure/cobuilder-build/build-personas/` |
-| Checklists | `CoBuilder/infrastructure/cobuilder-build/build-personas/checklists/` |
-| Scripts | `CoBuilder/infrastructure/cobuilder-build/build-personas/scripts/` |
-| Standards | `CoBuilder/infrastructure/cobuilder-build/standards/` |
-| Orchestrator | `CoBuilder/infrastructure/cobuilder-build/orchestrator/` |
-| Plans | `CoBuilder/infrastructure/cobuilder-build/plans/` |
+| Template Area | Template Path |
+|--------------|--------------|
+| Persona playbooks | `build/build-personas/` |
+| Checklists | `build/build-personas/checklists/` |
+| Scripts | `build/build-personas/scripts/` |
+| Standards | `build/standards/` |
+| Orchestrator | `build/orchestrator/` |
+| Plans | `build/plans/` |
+| Claude Code config | `.claude/` |
 
 ---
 

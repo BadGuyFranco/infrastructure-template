@@ -1,0 +1,13 @@
+{
+  "name": "infrastructure-template",
+  "private": true,
+  "description": "Project infrastructure template for Claude Code",
+  "scripts": {
+    "check:bob": "npx tsx build/build-personas/scripts/bob/run-all.ts",
+    "check:talia": "npx tsx build/build-personas/scripts/talia/run-all.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}

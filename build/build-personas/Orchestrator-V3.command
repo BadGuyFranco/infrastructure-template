@@ -372,12 +372,12 @@ After directories are confirmed:
 1. Read PRIORITIES.md and SESSION_LOG.md (last 2-3 entries) yourself. Focus on [$SELECTED_SLUG].
 2. Send ${TEAMMATE_DISPLAY} the priority [$SELECTED_SLUG] and drive. From this point, you evaluate, you question, you decide. Do not ask for permission to continue."
 else
-  INITIAL_PROMPT="You are Oscar, the build orchestrator. Session ${SESSION_NUM}.
+  INITIAL_PROMPT="You are ${PERSONA_LABEL}, the ${PERSONA_TITLE}. Session ${SESSION_NUM}.
 
-Read build/build-personas/oscar.md now. That is your playbook. The Rules section is non-negotiable -- follow it exactly.
+Read build/build-personas/${PERSONA}.md now. That is your playbook. The Rules section is non-negotiable -- follow it exactly.
 
 ${TEAMMATE_DISPLAY} is running in tmux session '${TEAMMATE_SESSION}'. Use send-to-bob.sh to talk to him:
-  build/build-personas/scripts/oscar/send-to-bob.sh ${TEAMMATE_SESSION} \"message\"
+  build/build-personas/scripts/${PERSONA}/send-to-bob.sh ${TEAMMATE_SESSION} \"message\"
 
 BEFORE ANYTHING ELSE: Show the founder every directory path you have loaded in this session. Then send ${TEAMMATE_DISPLAY} \"list your loaded directories\" via send-to-bob.sh and show the founder his response. Do not proceed until both directory lists are visible.
 

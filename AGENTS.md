@@ -129,8 +129,10 @@ Every code repository has a `BUILD_STATUS.md` tracking what IS being built and w
 ## Routing
 
 - **New to this project? Setting up for the first time?** -> `QUICKSTART.md`
+<!-- Uncomment and customize these routing entries for your workspace packages:
 - **Building a frontend?** -> `{project-name}-web/ARCHITECTURE.md`
 - **Building the cloud backend?** -> `{project-name}-services/ARCHITECTURE.md`
+-->
 - **What should we work on next?** -> `build/PRIORITIES.md`
 - **Build standards, orchestration, or process?** -> `build/AGENTS.md`
 - **Testing architecture or test strategy?** -> `build/quality/testing/ARCHITECTURE.md`
