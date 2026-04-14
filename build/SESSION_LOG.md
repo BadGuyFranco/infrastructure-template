@@ -31,7 +31,7 @@ PARALLEL SESSIONS:
 
 # Session Log
 
-## {DATE} (session 1) -- [{SLUG}] {Brief title} -- {Persona}
+## {DATE} (session 1) -- [SLUG] Brief title -- Persona
 
 **Focus:** {What the session set out to accomplish.}
 

@@ -1,7 +1,6 @@
 # Deploy Verification -- Smoke and Soak Tests
 
 **Shared checklist.** Referenced by Bob (runner), Oscar (verifier), and Talia (QA scope).
-**Full spec:** `quality/testing/ARCHITECTURE.md` section "Smoke and Soak Testing"
 
 ## Smoke Test
 
@@ -11,13 +10,13 @@
 **Pass criteria:** Health endpoint returns `ok` with all components passing. One authenticated API call returns HTTP 2xx within 5 seconds. Total time < 30 seconds.
 
 ```bash
-SMOKE_BASE_URL={API_STAGING_URL} \
-SMOKE_USER_ID={SYSTEM_USER_UUID} \
-SMOKE_ORG_ID=<your-test-org-id> \
-npx tsx build/quality/testing/smoke/smoke-test.ts
+# Replace with your actual staging/production URL
+curl -s https://staging.example.com/health | jq .
 ```
 
-Replace the staging URL with your production URL for production verification.
+<!-- If you have a smoke test script, invoke it here:
+npx tsx build/quality/testing/smoke/smoke-test.ts
+-->
 
 **Exit codes:** 0 = pass, 1 = fail (with diagnostic output).
 
@@ -37,25 +36,16 @@ Replace the staging URL with your production URL for production verification.
 | K0-P95 | Overall p95 latency < 2000ms |
 | K0-MEM | Memory growth < 50% RSS over test duration |
 
-Domain-specific criteria are defined per scenario (see ARCHITECTURE.md). All K0 + domain criteria must hold for the entire run.
+Domain-specific criteria are defined per scenario. All K0 + domain criteria must hold for the entire run.
 
-```bash
-SOAK_BASE_URL={API_STAGING_URL} \
-SOAK_USER_ID={SYSTEM_USER_UUID} \
-SOAK_ORG_ID=<your-test-org-id> \
+<!-- Replace with your actual soak test command when you build one:
 npx tsx build/quality/testing/soak/harness.ts \
   --scenario=<path-to-scenario> \
   --duration=15m
-```
+-->
 
 **Exit codes:** 0 = all pass, 1 = any fail, 2 = crash.
 **Report:** Soak results (pass/fail, duration, any violated criteria) must be recorded in the SESSION_LOG entry for the priority.
-
-### Post-Soak Cleanup
-
-The soak scenario's `teardown()` cleans up test files via the API, but storage bucket data may remain. After the soak completes, clean the test org's storage data using your cloud provider's CLI.
-
-**Note:** On macOS, some cloud CLI tools use Python multiprocessing (`fork()`), which can segfault due to Apple's networking stack not being fork-safe. Prefer CLI tools that handle parallelism without forking (e.g., `gcloud storage` instead of `gsutil -m`).
 
 ## Roles
 

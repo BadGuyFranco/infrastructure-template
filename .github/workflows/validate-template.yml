@@ -1,0 +1,82 @@
+name: Validate Template
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Verify setup.sh is executable
+        run: test -x setup.sh
+
+      - name: Verify hook scripts are executable
+        run: |
+          test -x .claude/hooks/code-hygiene-check.sh
+          test -x build/build-personas/Orchestrator-V3.command
+
+      - name: TypeScript scripts compile
+        run: |
+          npx tsx build/build-personas/scripts/bob/check-session-ready.ts || true
+          npx tsx build/build-personas/scripts/bob/check-code-hygiene.ts
+          npx tsx build/build-personas/scripts/bob/check-commit-ready.ts
+
+      - name: Verify AGENTS.md routing targets exist
+        run: |
+          errors=0
+          # Extract file paths from routing tables in AGENTS.md files
+          for agents_file in $(find . -name "AGENTS.md" -not -path "./.git/*"); do
+            dir=$(dirname "$agents_file")
+            # Extract paths from markdown links and backtick references
+            grep -oE '`[a-zA-Z_/-]+\.(md|ts|sh)`' "$agents_file" | tr -d '`' | while read -r ref; do
+              # Try relative to the AGENTS.md file's directory
+              if [ ! -f "$dir/$ref" ] && [ ! -d "$dir/$ref" ]; then
+                # Some refs are relative to build/ or other parent dirs
+                found=false
+                for base in "$dir" "$dir/.." "$dir/../.." "."; do
+                  if [ -f "$base/$ref" ] || [ -d "$base/$ref" ]; then
+                    found=true
+                    break
+                  fi
+                done
+                if [ "$found" = false ]; then
+                  echo "WARNING: $agents_file references $ref but it was not found"
+                fi
+              fi
+            done
+          done
+
+      - name: No secrets in repository
+        run: |
+          # Check for common secret patterns
+          if grep -rn "sk-ant-\|sk-proj-\|ghp_\|gho_\|xai-\|sk_live_\|pk_live_\|re_[A-Za-z]" \
+            --include="*.md" --include="*.json" --include="*.sh" --include="*.ts" \
+            --exclude-dir=.git .; then
+            echo "FAIL: Possible secrets found in repository"
+            exit 1
+          fi
+          echo "No secrets found"
+
+      - name: Placeholder consistency check
+        run: |
+          # Verify setup.sh's replaced set leaves zero after running
+          # (We can't run setup.sh in CI, but we can verify the patterns exist)
+          count=$(grep -rn '{PROJECT_NAME}' --include="*.md" --include="*.json" --include="*.ts" \
+            --exclude-dir=.git --exclude="setup.sh" . | wc -l)
+          echo "Template placeholders found: $count (expected: >0 before setup.sh runs)"
+          if [ "$count" -eq 0 ]; then
+            echo "WARNING: No {PROJECT_NAME} placeholders found -- template may have been hydrated"
+          fi

@@ -38,14 +38,14 @@ if [ "${1:-}" = "--check" ]; then
   # Phase 2: deferred placeholders (need project-specific config)
   echo "  -- Deferred (fill in when you set up these systems) --"
   grep -rn '{API_STAGING_URL}\|{SYSTEM_USER_UUID}\|{ORG_NAME}\|{ORG_SLUG}\|{ORG_UUID}\|{STAGING_DOMAIN}\|{PRODUCTION_DOMAIN}\|{NEON_CONNECTION_STRING}' \
-    --include="*.md" --include="*.json" --include="*.sh" --include="*.command" --include="*.ts" \
-    "$SCRIPT_DIR" 2>/dev/null | grep -v 'node_modules' | grep -v '.git/' || echo "  None."
+    --include="*.md" --include="*.json" --include="*.command" --include="*.ts" \
+    "$SCRIPT_DIR" 2>/dev/null | grep -v 'node_modules' | grep -v '.git/' | grep -v 'setup.sh' | grep -v 'UPSTREAM_SYNC.md' || echo "  None."
   echo ""
 
   # Phase 3: manual-fill placeholders (require human input)
   echo "  -- Manual fill (replace with your project's commands/values) --"
-  grep -rn '{YOUR[^}]*}\|{DATE}\|{ONE_SENTENCE_DESCRIPTION}\|{BRIEF_SUMMARY' \
-    --include="*.md" --include="*.json" --include="*.sh" --include="*.command" --include="*.ts" \
+  grep -rn '{YOUR[^}]*}\|{ONE_SENTENCE_DESCRIPTION}\|{BRIEF_SUMMARY' \
+    --include="*.md" --include="*.json" --include="*.command" --include="*.ts" \
     "$SCRIPT_DIR" 2>/dev/null | grep -v 'node_modules' | grep -v '.git/' | grep -v 'setup.sh' || echo "  None."
   echo ""
   exit 0

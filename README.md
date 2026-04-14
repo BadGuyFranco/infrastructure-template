@@ -1,8 +1,11 @@
 # Infrastructure Template
 
-A production-grade project infrastructure template for teams building with [Claude Code](https://docs.anthropic.com/en/docs/claude-code). Includes a multi-persona AI build system, orchestration scripts, quality checklists, and native Claude Code integration.
+[![Validate Template](https://github.com/BadGuyFranco/infrastructure-template/actions/workflows/validate-template.yml/badge.svg)](https://github.com/BadGuyFranco/infrastructure-template/actions/workflows/validate-template.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-This is the system used to build [CoBuilder](https://cobuilder.me) -- extracted, templatized, and open-sourced.
+A production-grade project infrastructure template for teams building with [Claude Code](https://docs.anthropic.com/en/docs/claude-code). Multi-persona AI build system with orchestration, quality checklists, and native Claude Code integration.
+
+Built from the system used to ship [CoBuilder](https://cobuilder.me) -- extracted, templatized, and open-sourced.
 
 ## What This Is
 

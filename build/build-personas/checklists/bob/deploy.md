@@ -67,17 +67,12 @@
 
 10. **Monitor deploy.** Watch your CI/CD dashboard for completion. Total time varies by project.
 
-11. **Verify health check and run smoke test.** Check your deploy logs for health check results. Also run the formal smoke test:
+11. **Verify health check.** Check your deploy logs for health check results:
     ```bash
-    # Manual health check
-    curl -s {API_STAGING_URL}/health | jq .
-    # Formal smoke test (see checklists/shared/deploy-verification.md for env vars)
-    SMOKE_BASE_URL={API_STAGING_URL} \
-    SMOKE_USER_ID={SYSTEM_USER_UUID} \
-    SMOKE_ORG_ID=<your-test-org-id> \
-    npx tsx build/quality/testing/smoke/smoke-test.ts
+    # Manual health check (replace with your staging URL)
+    curl -s https://staging.example.com/health | jq .
     ```
-    Expect: `status: "ok"`, all components with `status: "ok"` and `latencyMs` values. Smoke test exit code 0.
+    Expect: `status: "ok"`, all components healthy. If you have a smoke test script, run it per `checklists/shared/deploy-verification.md`.
 
 12. **Do not tag for production until BOTH CI and staging deploy pass.** Verify both pipelines show success on the same commit before proceeding to production.
 
@@ -95,14 +90,10 @@
 
 16. **First deploy of a new service.** If this is the first-ever deploy to a cloud service, IAM or authentication bindings may need manual configuration. Check your cloud provider's documentation for making the service publicly accessible.
 
-17. **Verify production health check and run smoke test.** Same as staging (see `checklists/shared/deploy-verification.md` for pass criteria):
+17. **Verify production health check.** Same as staging (see `checklists/shared/deploy-verification.md` for pass criteria):
     ```bash
-    curl -s {PRODUCTION_DOMAIN}/health | jq .
-    # Formal smoke test against production
-    SMOKE_BASE_URL={PRODUCTION_DOMAIN} \
-    SMOKE_USER_ID={SYSTEM_USER_UUID} \
-    SMOKE_ORG_ID=<your-test-org-id> \
-    npx tsx build/quality/testing/smoke/smoke-test.ts
+    # Replace with your production URL
+    curl -s https://api.example.com/health | jq .
     ```
 
 ## Post-Deploy

@@ -1,23 +1,11 @@
-<!--
-LLM INSTRUCTIONS:
-
-PURPOSE:
-- This is the ticketing convention for {PROJECT_NAME}.
-- Defines WHEN to file, ticket types, severity guidelines, visibility model, and context format.
-
-NOTE: Replace all placeholder values ({API_STAGING_URL}, {ORG_NAME}, {ORG_SLUG}, {ORG_UUID},
-{SYSTEM_USER_UUID}) after setting up your ticketing API.
--->
-
 # Ticketing Convention
 
 ## When to File a Ticket
 
 - **Every bug discovered during a session** -- even if you fix it immediately. The fix gets logged on the ticket.
 - **Every deferred fix** -- if you find a bug but it's out of scope for the current task, file a ticket so it isn't forgotten.
-- **Feature requests** -- use `--type feature` for enhancements and new capabilities.
-- **Support requests** -- use `--type support` for issues reported by users or external stakeholders.
-- **Tracking tasks** -- use `--type task` for work items that aren't bugs or features.
+- **Feature requests** -- new capabilities or enhancements.
+- **Tracking tasks** -- work items that aren't bugs or features.
 
 ## Ticket Types
 
@@ -25,7 +13,6 @@ NOTE: Replace all placeholder values ({API_STAGING_URL}, {ORG_NAME}, {ORG_SLUG},
 |------|-------------|
 | `bug` | Something is broken or behaving incorrectly |
 | `feature` | A new capability or enhancement request |
-| `support` | An issue reported by a user or external stakeholder |
 | `task` | A work item, tracking item, or follow-up that isn't a bug or feature |
 
 ## Severity Guidelines
@@ -37,142 +24,94 @@ NOTE: Replace all placeholder values ({API_STAGING_URL}, {ORG_NAME}, {ORG_SLUG},
 | `medium` | Feature degraded or type errors | Typecheck failures, field name mismatches, stale UI state |
 | `low` | Cosmetic or minor inconvenience | Icon mismatch, unused import warnings |
 
-## Visibility Model
-
-Tickets have a visibility field that controls who can see them (enforced by database RLS):
-
-| Visibility | Who can see | When to use |
-|-----------|-------------|-------------|
-| `private` | Only the filing user | Personal notes, draft investigations |
-| `team` | Members of the ticket's team | Team-scoped work (requires `--team-id`) |
-| `internal` | All members of the ticket's organization | **Default.** Most bugs and tasks |
-| `customer` | Org members + the filing user | Customer-reported bugs visible to the reporter |
-
-Default is `internal` -- visible to all {ORG_NAME} org members. Use this for all standard build work.
-
 ## Status Values
 
 | Status | Meaning |
 |--------|---------|
 | `open` | New or reopened, not yet being worked |
 | `in_progress` | Actively being worked on |
-| `waiting` | Blocked on external input, dependency, or information |
 | `resolved` | Fix applied and verified |
-| `closed` | No action needed (not a bug, duplicate, or won't fix with explanation) |
-| `wont_fix` | Acknowledged but intentionally not fixing |
+| `closed` | No action needed (not a bug, duplicate, or won't fix) |
 
-## Tags
+## Labels
 
-Use `--tags` to add comma-separated labels for cross-cutting concerns:
-
-```bash
---tags "regression,security"
---tags "pre-existing,performance"
-```
-
-Tags are free-form strings. Conventions: `regression`, `security`, `pre-existing`, `performance`, `not-a-bug`.
+Use labels for cross-cutting concerns: `regression`, `security`, `pre-existing`, `performance`, `blocked`.
 
 ## Component List
 
-<!-- Replace with your project's actual components. Any string is accepted -- use the most specific component name. -->
-`api`, `auth`, `billing`, `database`, `frontend`, `backend`, `shared`, `build`
+<!-- Replace with your project's actual components. -->
+`api`, `auth`, `database`, `frontend`, `backend`, `shared`, `build`
 
-## The Context Field
+## Filing Tickets with GitHub Issues (Default)
 
-When filing a ticket, always include structured context so the fixer knows WHERE to look:
-
-- **packages** -- which monorepo packages are involved (for rebuild/test scoping)
-- **files** -- specific files to read before working on the fix (relative to project root)
-- **dependencies** -- external packages involved
-- **related_tickets** -- ticket IDs that are related
-
-## Default Organization
-
-All build personas operate within the **{ORG_NAME}** organization (slug: `{ORG_SLUG}`, UUID: `{ORG_UUID}`). This is the default org for all ticket operations -- no `--org` flag needed.
-
-## Filing Tickets
-
-Tickets are stored in the staging database via the services API. All personas file tickets by calling the staging API directly with curl.
-
-**Auth header (required on every request):**
-```
--H "X-User-Id: {SYSTEM_USER_UUID}"
-```
-This is the well-known system user. All build persona ticket operations use this user.
+The default ticketing system uses GitHub Issues via the `gh` CLI. All personas file tickets using these commands.
 
 ### Create a ticket
 
 ```bash
-curl -s -X POST {API_STAGING_URL}/api/v1/tickets \
-  -H "Content-Type: application/json" \
-  -H "X-User-Id: {SYSTEM_USER_UUID}" \
-  -d '{
-    "title": "Short summary of the issue",
-    "description": "Full context. Include root cause if known, affected code paths, reproduction steps.",
-    "component": "backend",
-    "type": "bug",
-    "severity": "high",
-    "reporterType": "developer",
-    "tags": ["pre-existing"],
-    "context": {
-      "packages": ["{project-name}-services"],
-      "files": ["services/server/src/example-path.ts"],
-      "related_priorities": ["EXAMPLE-SLUG"]
-    }
-  }'
+gh issue create \
+  --title "Short summary of the issue" \
+  --body "Full context. Include root cause if known, affected code paths, reproduction steps.
+
+**Component:** backend
+**Severity:** high
+**Type:** bug
+
+**Context:**
+- Packages: {project-name}-services
+- Files: services/server/src/example-path.ts
+- Related priorities: [EXAMPLE-SLUG]" \
+  --label "bug,high"
 ```
 
-Required fields: `title`, `description`, `component`, `reporterType`. Optional: `type`, `severity`, `visibility`, `orgId`, `teamId`, `assignedTo`, `tags`, `environment`, `context`, `metadata`.
-
-### List tickets (with filters)
+### List open tickets
 
 ```bash
-curl -s "{API_STAGING_URL}/api/v1/tickets?status=open" \
-  -H "X-User-Id: {SYSTEM_USER_UUID}"
+gh issue list --state open
+gh issue list --state open --label "bug"
+gh issue list --state open --label "critical"
 ```
 
-Filter params: `status`, `severity`, `component`, `type`, `visibility`, `teamId`, `assignedTo`, `tags`, `limit`, `offset`.
-
-### Search tickets by text
+### Search tickets
 
 ```bash
-curl -s "{API_STAGING_URL}/api/v1/tickets/search?q=streaming&component=backend" \
-  -H "X-User-Id: {SYSTEM_USER_UUID}"
+gh issue list --search "streaming component:backend"
 ```
 
-Search params: `q` (text search), `component`, `status`, `severity`, `type`, `visibility`, `teamId`, `limit`, `offset`.
-
-### Get a single ticket (with comments)
+### View a ticket
 
 ```bash
-curl -s "{API_STAGING_URL}/api/v1/tickets/TICKET_UUID" \
-  -H "X-User-Id: {SYSTEM_USER_UUID}"
+gh issue view 42
 ```
 
 ### Update a ticket
 
 ```bash
-curl -s -X PATCH "{API_STAGING_URL}/api/v1/tickets/TICKET_UUID" \
-  -H "Content-Type: application/json" \
-  -H "X-User-Id: {SYSTEM_USER_UUID}" \
-  -d '{"status": "resolved", "severity": "low"}'
+gh issue edit 42 --add-label "resolved"
+gh issue close 42
+gh issue comment 42 --body "Fixed in commit abc123. Verified on staging."
 ```
 
-Updatable fields: `status`, `severity`, `type`, `visibility`, `component`, `title`, `description`, `teamId`, `assignedTo`, `tags`, `environment`, `context`, `metadata`.
-
-### Add a comment
+### Check for duplicates before filing
 
 ```bash
-curl -s -X POST "{API_STAGING_URL}/api/v1/tickets/TICKET_UUID/comments" \
-  -H "Content-Type: application/json" \
-  -H "X-User-Id: {SYSTEM_USER_UUID}" \
-  -d '{"body": "Comment text here.", "commenterType": "agent"}'
+gh issue list --search "keyword from the bug description"
 ```
 
-## Valid Enum Values
+Always check for existing issues before creating a new one to avoid duplicates.
 
-- **type:** `bug`, `feature`, `support`, `task`
-- **visibility:** `private`, `team`, `internal`, `customer`
-- **status:** `open`, `in_progress`, `waiting`, `resolved`, `closed`, `wont_fix`
-- **severity:** `critical`, `high`, `medium`, `low`
-- **reporterType / commenterType:** `developer`, `agent`, `user`
+<!-- ADVANCED: Custom Ticketing API
+
+If your project has a custom ticketing API (REST, Linear, Jira), replace the
+gh commands above with your API's equivalents. Structure:
+
+1. Auth header (how to authenticate)
+2. Create (POST with title, description, component, type, severity)
+3. List (GET with filter params: status, severity, component, type)
+4. Search (GET with text query)
+5. Update (PATCH with status, severity changes)
+6. Comment (POST with comment body)
+
+Keep the same "When to File" rules and severity guidelines regardless
+of which backend you use.
+-->
