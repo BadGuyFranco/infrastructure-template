@@ -1,66 +1,120 @@
 # Getting Started
 
-How to go from "I have this template" to "I'm building."
+From clone to first build session in under 10 minutes.
 
-## Step 1: Replace Placeholders
+## Step 1: Clone and Run Setup
 
-Find and replace these placeholders across all files:
+```bash
+git clone https://github.com/BadGuyFranco/infrastructure-template.git my-project
+cd my-project
+./setup.sh
+```
 
-| Placeholder | Replace With | Example |
-|-------------|-------------|---------|
-| `{PROJECT_NAME}` | Your project's display name | "Acme Platform" |
-| `{project-name}` | Kebab-case slug | "acme-platform" |
-| `{PROJECT_ROOT}` | Absolute path to project root | `/Users/me/acme-platform` |
-| `{MONOREPO_ROOT}` | Absolute path to monorepo root | `/Users/me/acme-platform` |
-| `{FOUNDER_NAME}` | Your name | "Jane" |
-| `{GCP_PROJECT_ID}` | GCP project ID (if using GCP) | "acme-prod-123" |
-| `{GCP_REGION}` | GCP region | "us-central1" |
-| `{API_STAGING_URL}` | Staging API base URL | "https://staging.acme.com" |
-| `{DATE}` | Today's date | "2026-03-30" |
+The setup script asks for your project name, paths, and accounts, then replaces all `{PLACEHOLDER}` values across the codebase. Verify nothing was missed:
 
-Placeholders you can leave until the relevant system is set up: `{API_STAGING_URL}`, `{ORG_NAME}`, `{ORG_SLUG}`, `{ORG_UUID}`, `{SYSTEM_USER_UUID}` (ticketing system -- see Step 6).
+```bash
+./setup.sh --check
+```
 
-## Step 2: Verify Dependencies
+## Step 2: Install Dependencies
 
-1. Follow `DEPENDENCIES.md` to install the required runtime (Node.js 20+, pnpm, Git).
-2. Follow `build/ENVIRONMENT.md` to set up CLIs and auth (GitHub CLI, cloud provider CLI, Claude Code).
-3. Run the verification checklist at the bottom of `ENVIRONMENT.md` to confirm everything works.
+```bash
+# Claude Code CLI (standalone installer)
+curl -fsSL https://claude.ai/install.sh | sh
+claude auth
 
-## Step 3: Set Up Your Monorepo
+# GitHub CLI
+gh auth login
 
-Create your workspace packages (see the Component Map template in `ARCHITECTURE.md`). Each package needs at minimum:
+# tmux (required for Oscar orchestration)
+brew install tmux
+```
 
-- `package.json`
-- `AGENTS.md` (AI routing)
-- `ARCHITECTURE.md` (if the component has significant decisions or sub-components)
+Full tool versions and verification checklist: `build/ENVIRONMENT.md`
 
-Add a root `package.json` with pnpm workspace configuration and a `turbo.json` for task orchestration.
+## Step 3: Configure Claude Code
+
+The template ships with project-level settings (`.claude/settings.json`) that configure:
+- Permissions for all tools
+- Env vars that disable 1M context, adaptive thinking, and auto-memory
+- Hooks for audio notifications and code hygiene checks
+
+**Global settings** -- copy this to `~/.claude/settings.json`:
+```json
+{
+  "permissions": {
+    "allow": [
+      "Bash(*)", "Edit(*)", "Write(*)", "Read(*)",
+      "Glob(*)", "Grep(*)", "NotebookEdit(*)",
+      "WebFetch(*)", "WebSearch(*)", "Agent(*)", "mcp__*"
+    ]
+  },
+  "effortLevel": "high",
+  "skipDangerousModePermissionPrompt": true
+}
+```
+
+> Do NOT add a `model` field to global settings. Model selection is handled by agent frontmatter (`.claude/agents/*.md`).
 
 ## Step 4: Fill In Your Project Context
 
-1. **`ARCHITECTURE.md` (root):** Fill in "What {PROJECT_NAME} Is", Platform Principles, and Component Map.
-2. **`build/PRIORITIES.md`:** Replace the example priority with your actual first priority.
-3. **`build/AGENTS.md` -- Local Development Commands:** Add your actual dev server, typecheck, test, and lint commands.
-4. **`build/standards/CODE_STANDARDS.md`:** Replace all `{YOUR COMMANDS}` placeholders with actual commands.
-5. **`build/standards/VERIFICATION.md`:** Replace `{YOUR COMMANDS}` with your typecheck and test commands.
+1. **`ARCHITECTURE.md`** -- fill in what your project is, platform principles, and the component map
+2. **`build/AGENTS.md`** -- add your actual dev commands (dev server, typecheck, test, lint) to the Local Development Commands section
+3. **`build/PRIORITIES.md`** -- replace the example priority with your first real priority
+4. **`AGENTS.md`** (root) -- fill in the Code Repository table with your workspace packages
 
-## Step 5: First Session
+## Step 5: First Session (Bob)
 
-1. Open Claude Code in your project root.
-2. The AI reads `AGENTS.md` and defaults to the Bob persona.
-3. Bob reads `build/PRIORITIES.md` to see what to work on.
-4. Build. Bob follows CODE_STANDARDS and uses the done-gate checklist when finishing work.
-5. At session end, Bob executes the session-end checklist.
+```bash
+cd my-project
+claude --agent bob
+```
 
-That's it. The rest of the infrastructure grows with your project.
+Bob reads the AGENTS.md chain automatically. He'll:
+1. Run `check-session-ready.ts` to verify git state
+2. Read `PRIORITIES.md` to see what to work on
+3. Build. Following CODE_STANDARDS, using the done-gate checklist when finishing work.
+4. At session end, execute the session-end checklist.
 
-## Step 6: Set Up Later (When Needed)
+**Expected output on first launch:**
+```
+Loading Bob session context...
+```
+Bob will read AGENTS.md and ask about priorities or wait for direction.
 
-**Ticketing system** (`build/TICKETS.md`): Requires a running API with ticket endpoints. Until then, use GitHub Issues or a simple markdown log. Replace the `{API_STAGING_URL}`, `{ORG_NAME}`, `{ORG_SLUG}`, `{ORG_UUID}`, and `{SYSTEM_USER_UUID}` placeholders when your ticket API is live.
+## Step 6: First Orchestrated Session (Oscar + Bob)
 
-**Oscar orchestration** (`build/build-personas/oscar.md`): Requires macOS with tmux and iTerm2. See oscar.md -- Platform Requirements for setup and non-Mac alternatives.
+This is the full multi-session setup where Oscar drives Bob via tmux.
 
-**Testing layers 2-5** (`build/quality/testing/ARCHITECTURE.md`): The testing architecture describes 5 layers. Only Layer 1 (unit tests) is immediately actionable for new projects. Layers 2-5 are design specifications to implement as your project matures.
+**Prerequisites:**
+- tmux installed (`brew install tmux`)
+- iTerm2 installed (recommended)
+- `~/.claude-accounts` file configured (see `build/ENVIRONMENT.md`)
+
+```bash
+# Double-click in Finder, or:
+bash build/build-personas/Orchestrator-V3.command
+```
+
+The launcher will:
+1. Ask you to pick a Claude Code account
+2. Show your priorities from PRIORITIES.md
+3. Launch Bob in a tmux session with auto-restart
+4. Launch Oscar in a separate tmux session
+5. Open iTerm with side-by-side panes
+6. Oscar reads his playbook, then drives Bob on the selected priority
+
+**What you see:** Two terminal panes. Oscar (left) evaluates and questions. Bob (right) builds. You watch both and intervene when needed.
+
+## Step 7: Set Up Later (When Needed)
+
+| Capability | When to Add | Setup |
+|------------|------------|-------|
+| **Talia (QA)** | When quality verification matters | Bob dispatches her as a sub-agent -- no extra setup needed |
+| **Path-scoped rules** | When you have coding standards | Add `.md` files to `.claude/rules/` with glob frontmatter |
+| **Additional personas** | When you need specialized roles | Use `build/build-personas/_PERSONA_TEMPLATE.md` + create `.claude/agents/{name}.md` |
+| **Testing layers 2-5** | As your test suite matures | `build/quality/testing/ARCHITECTURE.md` has the design spec |
+| **Ticketing API** | When you have a running API | Replace ticket-related placeholders in `build/TICKETS.md` |
 
 ## What to Adopt When
 
@@ -70,3 +124,13 @@ That's it. The rest of the infrastructure grows with your project.
 | **Week 2** | Plans system, SESSION_LOG, DOCUMENTATION_STANDARDS, dispatch templates | Multi-session work needs persistent tracking |
 | **Month 1** | Talia (QA), QA dispatch, testing architecture, ADRs | Quality verification becomes a real concern |
 | **Mature** | Oscar (orchestration), full checklist system, architecture reviews | Process oversight adds value at scale |
+
+## Troubleshooting
+
+**"Claude Code doesn't read AGENTS.md"** -- make sure you're launching with `--agent bob` or from within the project directory where `.claude/agents/bob.md` exists.
+
+**"Oscar can't talk to Bob"** -- verify tmux is installed at `/opt/homebrew/bin/tmux`. Run `which tmux` to check. See `build/ENVIRONMENT.md` for non-Mac paths.
+
+**"Hooks aren't firing"** -- check that `.claude/settings.json` exists in the project root and that `jq` is installed (needed by the code-hygiene hook).
+
+**"setup.sh missed some placeholders"** -- run `./setup.sh --check` to find them. Some placeholders in HTML comments or code examples may need manual replacement.

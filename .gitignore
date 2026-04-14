@@ -10,9 +10,8 @@ Thumbs.db
 !.claude/agents/
 !.claude/hooks/
 !.claude/settings.json
-# Uncomment as needed:
-# !.claude/skills/
-# !.claude/rules/
+!.claude/skills/
+!.claude/rules/
 
 # Local settings (machine-specific permissions)
 .claude/settings.local.json
